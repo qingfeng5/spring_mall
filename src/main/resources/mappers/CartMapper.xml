@@ -25,7 +25,7 @@
     delete from mmall_cart
     where id = #{id,jdbcType=INTEGER}
   </delete>
-  <insert id="insert" parameterType="com.mmall.pojo.Cart" >
+  <insert id="insert" parameterType="com.qingfeng.pojo.Cart" >
     insert into mmall_cart (id, user_id, product_id,
       quantity, checked, create_time,
       update_time)
@@ -177,20 +177,6 @@
     where user_id = #{userId}
     and checked = 1
   </select>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 </mapper>

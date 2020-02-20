@@ -1,0 +1,18 @@
+package java.com.qingfeng.test;
+
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TransactionConfiguration;
+
+/**
+ * @author 清风
+ * @date 2020/2/20 10:32
+ */
+@RunWith(SpringJUnit4ClassRunner.class)
+@TransactionConfiguration(transactionManager = "transactionManager")
+@ContextConfiguration(locations={"classpath:applicationContext.xml"})
+public class TestBase {
+//public abstract class TestBase extends AbstractTransactionalJUnit4SpringContextTests {
+
+}

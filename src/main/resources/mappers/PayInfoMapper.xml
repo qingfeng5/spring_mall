@@ -27,7 +27,7 @@
     delete from mmall_pay_info
     where id = #{id,jdbcType=INTEGER}
   </delete>
-  <insert id="insert" parameterType="com.mmall.pojo.PayInfo" >
+  <insert id="insert" parameterType="com.qingfeng.pojo.PayInfo" >
     insert into mmall_pay_info (id, user_id, order_no,
       pay_platform, platform_number, platform_status,
       create_time, update_time)

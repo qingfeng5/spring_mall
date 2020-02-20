@@ -9,8 +9,9 @@
      http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
 
-    扫描包下的注解，很方便的在类中进行注入
+
     <context:component-scan base-package="com.qingfeng" annotation-config="true"/>
+
 
     <!--<context:annotation-config/>-->
     <aop:aspectj-autoproxy/>
