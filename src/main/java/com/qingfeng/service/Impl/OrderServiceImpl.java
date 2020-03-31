@@ -1,5 +1,15 @@
 package com.qingfeng.service.Impl;
 
+import com.alipay.api.AlipayResponse;
+import com.alipay.api.response.AlipayTradePrecreateResponse;
+import com.alipay.demo.trade.config.Configs;
+import com.alipay.demo.trade.model.ExtendParams;
+import com.alipay.demo.trade.model.GoodsDetail;
+import com.alipay.demo.trade.model.builder.AlipayTradePrecreateRequestBuilder;
+import com.alipay.demo.trade.model.result.AlipayF2FPrecreateResult;
+import com.alipay.demo.trade.service.AlipayTradeService;
+import com.alipay.demo.trade.service.impl.AlipayTradeServiceImpl;
+import com.alipay.demo.trade.utils.ZxingUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
@@ -11,6 +21,7 @@ import com.qingfeng.pojo.*;
 import com.qingfeng.service.IOrderService;
 import com.qingfeng.util.BigDecimalUtil;
 import com.qingfeng.util.DateTimeUtil;
+import com.qingfeng.util.FTPUtil;
 import com.qingfeng.util.PropertiesUtil;
 import com.qingfeng.vo.OrderItemVo;
 import com.qingfeng.vo.OrderProductVo;
@@ -358,7 +369,7 @@ public class OrderServiceImpl implements IOrderService {
 
 
 
-
+    /**支付订单**/
     public ServerResponse pay(Long orderNo,Integer userId,String path){
         Map<String ,String> resultMap = Maps.newHashMap();
         Order order = orderMapper.selectByUserIdAndOrderNo(userId,orderNo);
@@ -375,11 +386,12 @@ public class OrderServiceImpl implements IOrderService {
 
 
         // (必填) 订单标题，粗略描述用户的支付目的。如“xxx品牌xxx门店当面付扫码消费”
-        String subject = new StringBuilder().append("happymmall扫码支付,订单号:").append(outTradeNo).toString();
+        String subject = new StringBuilder().append("清风扫码支付,订单号:").append(outTradeNo).toString();
 
 
         // (必填) 订单总金额，单位为元，不能超过1亿元
         // 如果同时传入了【打折金额】,【不可打折金额】,【订单总金额】三者,则必须满足如下条件:【订单总金额】=【打折金额】+【不可打折金额】
+        //没有打折赋值成总价
         String totalAmount = order.getPayment().toString();
 
 
@@ -415,11 +427,13 @@ public class OrderServiceImpl implements IOrderService {
 
         // 商品明细列表，需填写购买商品详细信息，
         List<GoodsDetail> goodsDetailList = new ArrayList<GoodsDetail>();
-
+        //获取订单下面的item
         List<OrderItem> orderItemList = orderItemMapper.getByOrderNoUserId(orderNo,userId);
         for(OrderItem orderItem : orderItemList){
             GoodsDetail goods = GoodsDetail.newInstance(orderItem.getProductId().toString(), orderItem.getProductName(),
+                    //乘法
                     BigDecimalUtil.mul(orderItem.getCurrentUnitPrice().doubleValue(),new Double(100).doubleValue()).longValue(),
+                    //数量
                     orderItem.getQuantity());
             goodsDetailList.add(goods);
         }
@@ -442,14 +456,17 @@ public class OrderServiceImpl implements IOrderService {
                 AlipayTradePrecreateResponse response = result.getResponse();
                 dumpResponse(response);
 
+                //首先创建一个file，判断存不存在，可以写权限
+                //保证生成为文件夹是有的，生成路径
                 File folder = new File(path);
+                //如果不存在，写ture，并创建目录
                 if(!folder.exists()){
                     folder.setWritable(true);
                     folder.mkdirs();
                 }
 
                 // 需要修改为运行机器上的路径
-                //细节细节细节
+                //细节细节细节 ，需要加“/”保证没有问题
                 String qrPath = String.format(path+"/qr-%s.png",response.getOutTradeNo());
                 String qrFileName = String.format("qr-%s.png",response.getOutTradeNo());
                 ZxingUtils.getQRCodeImge(response.getQrCode(), 256, qrPath);
@@ -491,15 +508,20 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
-
+    /**回调函数***/
     public ServerResponse aliCallback(Map<String,String> params){
+        //拿出订单号
         Long orderNo = Long.parseLong(params.get("out_trade_no"));
+        //支付宝的交易号
         String tradeNo = params.get("trade_no");
+        //交易状态
         String tradeStatus = params.get("trade_status");
+        //去sql中查询这个订单存不存在
         Order order = orderMapper.selectByOrderNo(orderNo);
         if(order == null){
-            return ServerResponse.createByErrorMessage("非快乐慕商城的订单,回调忽略");
+            return ServerResponse.createByErrorMessage("非清风商城的订单,回调忽略");
         }
+        //看看又没有已经支付过了
         if(order.getStatus() >= Const.OrderStatusEnum.PAID.getCode()){
             return ServerResponse.createBySuccess("支付宝重复调用");
         }
@@ -523,14 +545,14 @@ public class OrderServiceImpl implements IOrderService {
 
 
 
-
-
+    /**前台查询订单的支付状态**/
     public ServerResponse queryOrderPayStatus(Integer userId,Long orderNo){
         Order order = orderMapper.selectByUserIdAndOrderNo(userId,orderNo);
         if(order == null){
             return ServerResponse.createByErrorMessage("用户没有该订单");
         }
         if(order.getStatus() >= Const.OrderStatusEnum.PAID.getCode()){
+            //当大于等于这个订单，都认为已发货的订单
             return ServerResponse.createBySuccess();
         }
         return ServerResponse.createByError();

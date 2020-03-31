@@ -1,5 +1,8 @@
 package com.qingfeng.controller.portal;
 
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.demo.trade.config.Configs;
 import com.google.common.collect.Maps;
 import com.qingfeng.common.Const;
 import com.qingfeng.common.ResponseCode;
@@ -90,27 +93,14 @@ public class OrderController {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**支付订单**/
     @RequestMapping("pay.do")
     @ResponseBody
+    //HttpServletRequest request是用来获取servlet的上下文，拿到upload的文件夹，
+    // 把自动生成二维码传到ftp服务器，返回给前端的二维码的前端地址，然后前端把图片地址进行展示
+    //在扫码支付
     public ServerResponse pay(HttpSession session, Long orderNo, HttpServletRequest request){
+        //用户登录
         User user = (User)session.getAttribute(Const.CURRENT_USER);
         if(user ==null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.NEED_LOGIN.getCode(),ResponseCode.NEED_LOGIN.getDesc());
@@ -119,18 +109,23 @@ public class OrderController {
         return iOrderService.pay(orderNo,user.getId(),path);
     }
 
+
+    /**回调函数**/
     @RequestMapping("alipay_callback.do")
     @ResponseBody
     public Object alipayCallback(HttpServletRequest request){
         Map<String,String> params = Maps.newHashMap();
 
+        //value是放在数组里的，并取出来，用迭代器取
         Map requestParams = request.getParameterMap();
         for(Iterator iter = requestParams.keySet().iterator(); iter.hasNext();){
             String name = (String)iter.next();
             String[] values = (String[]) requestParams.get(name);
             String valueStr = "";
-            for(int i = 0 ; i <values.length;i++){
 
+            for(int i = 0 ; i <values.length;i++){
+                //初始化，如果i为o，0等于length-1的话，说明只有一个元素
+                //如果length等于1 ，1-1 等于0就是上面的for循环，把str的值都遍历一遍
                 valueStr = (i == values.length -1)?valueStr + values[i]:valueStr + values[i]+",";
             }
             params.put(name,valueStr);
@@ -138,7 +133,7 @@ public class OrderController {
         logger.info("支付宝回调,sign:{},trade_status:{},参数:{}",params.get("sign"),params.get("trade_status"),params.toString());
 
         //非常重要,验证回调的正确性,是不是支付宝发的.并且呢还要避免重复通知.
-
+        //ali的公钥等
         params.remove("sign_type");
         try {
             boolean alipayRSACheckedV2 = AlipaySignature.rsaCheckV2(params, Configs.getAlipayPublicKey(),"utf-8",Configs.getSignType());
@@ -161,7 +156,8 @@ public class OrderController {
         return Const.AlipayCallback.RESPONSE_FAILED;
     }
 
-
+    /**前台查询订单的支付状态**/
+    //看是否付款成功，成功了，会给出一个指引，跳转到订单界面
     @RequestMapping("query_order_pay_status.do")
     @ResponseBody
     public ServerResponse<Boolean> queryOrderPayStatus(HttpSession session, Long orderNo){

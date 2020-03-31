@@ -11,8 +11,11 @@ import java.util.Map;
  * @date 2020/2/20 10:15
  */
 public interface IOrderService {
+    //支付功能
     ServerResponse pay(Long orderNo, Integer userId, String path);
+    //回调函数
     ServerResponse aliCallback(Map<String,String> params);
+    //前台返回的订单状态
     ServerResponse queryOrderPayStatus(Integer userId,Long orderNo);
     ServerResponse createOrder(Integer userId,Integer shippingId);
     ServerResponse<String> cancel(Integer userId,Long orderNo);

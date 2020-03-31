@@ -52,7 +52,7 @@ public class Const {
         }
     }
 
-
+    /**订单在线**/
     public enum OrderStatusEnum{
         CANCELED(0,"已取消"),
         NO_PAY(10,"未支付"),
@@ -86,6 +86,8 @@ public class Const {
             throw new RuntimeException("么有找到对应的枚举");
         }
     }
+
+    /**支付宝回调常量类**/
     public interface  AlipayCallback{
         String TRADE_STATUS_WAIT_BUYER_PAY = "WAIT_BUYER_PAY";
         String TRADE_STATUS_TRADE_SUCCESS = "TRADE_SUCCESS";
@@ -95,7 +97,7 @@ public class Const {
     }
 
 
-
+    /**支付平台，以后会微信等**/
     public enum PayPlatformEnum{
         ALIPAY(1,"支付宝");
 
